@@ -8,3 +8,7 @@ tqdm
 Pillow
 tensorboard
 flask
+fastapi
+python-multipart
+uvicorn
+python-dotenv
