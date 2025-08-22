@@ -11,24 +11,35 @@
         <h1>FoodVision Mini</h1>
         <p>Train a new model or use a trained model to make a prediction.</p>
         
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="message {{ category }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+        <!-- FRAMEWORK-AGNOSTIC MESSAGE BLOCK -->
+        <!-- 1. Check if the Flask-specific function is defined -->
+        {% if get_flashed_messages is defined %}
+            <!-- If it is, we are in a Flask context, so run the Flask code -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="message {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        {% endif %}
+        
+        <!-- 2. This part is for FastAPI's query parameter messages -->
+        <!-- It is harmless in Flask as 'message' won't be in the context -->
+        {% if message %}
+            <div class="message {{ category }}">{{ message }}</div>
+        {% endif %}
 
         <div class="form-container">
             <!-- Training Section -->
             <div class="form-section">
                 <h2>Train a New Model</h2>
-                
+
                 <div class="status-box" id="status-box">
                     <strong>Current Status:</strong> 
                     <span id="status-text">{{ training_status.status }}</span>
                     <p id="status-details">{{ training_status.details }}</p>
-                    
+
                     <div id="progress-container" style="display: none;">
                         <div id="progress-bar">
                             <div id="progress-bar-inner"></div>
@@ -39,7 +50,7 @@
                         <button type="submit" class="cancel-button">Cancel Training</button>
                     </form>
                 </div>
-                
+
                 <div class="info-box">
                     <p><strong>Compute Device:</strong> {{ device_info }}</p>
                     <p><strong>Note:</strong> Training is computationally intensive and may take a significant amount of time, especially on a CPU.</p>
@@ -116,16 +127,21 @@
                 statusBox.setAttribute('data-status', data.status);
                 
                 if (data.status === 'Running') {
-                    if (!wasRunning) {
+                    if (!wasRunning) { 
                         statusDetails.textContent = data.details;
-                    }
+                     }
                     trainingFieldset.disabled = true;
                     cancelForm.style.display = 'block';
                     progressContainer.style.display = 'block';
                     wasRunning = true;
                 } else { // Idle
                     if (wasRunning) {
-                        window.location.reload();
+                        if (data.message) {
+                            const category = data.details.includes('successfully') ? 'success' : 'error';
+                            window.location.href = `/?message=${encodeURIComponent(data.message)}&category=${category}`;
+                        } else {
+                            window.location.reload();
+                        }
                     }
                     statusDetails.textContent = data.details; // Show completion message
                     trainingFieldset.disabled = false;
@@ -136,7 +152,7 @@
 
             } catch (error) {
                 console.error('Error fetching status:', error);
-            }
+             }
         }
 
         setInterval(fetchStatus, 3000);
