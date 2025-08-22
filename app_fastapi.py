@@ -181,8 +181,8 @@ async def predict(
         # model_name = "effnetb4" if "effnetb4" in full_model_path.name else ("effnetb2" if "effnetb2" in full_model_path.name else "effnetb0")
         class_names = ["pizza", "steak", "sushi"]
 
-        match = re.search(r"effnetb\d+", full_model_path)
-        model_name = match.group(0) if match else "effnetb0" 
+        match = re.search(r"effnetb\d+", full_model_path.name)
+        model_name = match.group(0) if match else "effnetb0"
 
         device = torch.device(get_pytorch_device())
         model = model_builder.EfficientNet(model_name=model_name, num_classes=len(class_names))
