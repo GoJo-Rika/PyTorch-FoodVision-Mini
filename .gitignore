@@ -11,3 +11,6 @@ wheels/
 
 # System Files
 .DS_Store
+
+# Environment variables
+.env
