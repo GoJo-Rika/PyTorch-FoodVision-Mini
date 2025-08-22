@@ -9,11 +9,14 @@ import matplotlib
 
 matplotlib.use("Agg")
 
-
 import matplotlib.pyplot as plt
 import torch
+from dotenv import load_dotenv
 from flask import Flask, flash, jsonify, redirect, render_template, request, url_for
 from werkzeug.utils import secure_filename
+
+# Loading secret key from environment variables
+load_dotenv()
 
 # Import project's modules
 from food_vision import model_builder
@@ -35,6 +38,7 @@ training_log = {"status": "Idle", "details": "", "model_filename": ""}
 # ---- Flask App Initialization ----
 app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+app.secret_key = os.getenv("SECRET_KEY")
 
 
 # ---- Helper Functions ----
@@ -60,7 +64,7 @@ def get_device_info():
 
 
 def get_available_models():
-    if not MODELS_FOLDER.exists(): 
+    if not MODELS_FOLDER.exists():
         return []
     return sorted([f.name for f in MODELS_FOLDER.glob("*.pth")], reverse=True)
 
