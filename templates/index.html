@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FoodVision Mini Interface</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>FoodVision Mini</h1>
+        <p>Train a new model or use a trained model to make a prediction.</p>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="message {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="form-container">
+            <!-- Training Section -->
+            <div class="form-section">
+                <h2>Train a New Model</h2>
+                
+                <div class="status-box" id="status-box">
+                    <strong>Current Status:</strong> 
+                    <span id="status-text">{{ training_status.status }}</span>
+                    <p id="status-details">{{ training_status.details }}</p>
+                    
+                    <div id="progress-container" style="display: none;">
+                        <div id="progress-bar">
+                            <div id="progress-bar-inner"></div>
+                        </div>
+                    </div>
+
+                    <form id="cancel-form" action="/cancel_training" method="post" style="display: none;">
+                        <button type="submit" class="cancel-button">Cancel Training</button>
+                    </form>
+                </div>
+                
+                <div class="info-box">
+                    <p><strong>Compute Device:</strong> {{ device_info }}</p>
+                    <p><strong>Note:</strong> Training is computationally intensive and may take a significant amount of time, especially on a CPU.</p>
+                </div>
+
+                <form action="/train" method="post">
+                    <fieldset id="training-fieldset">
+                        <label for="model">Model Architecture:</label>
+                        <select id="model" name="model" required>
+                            <option value="effnetb0">EfficientNetB0</option>
+                            <option value="effnetb2">EfficientNetB2</option>
+                            <option value="effnetb4">EfficientNetB4</option>
+                        </select>
+                        <label for="data_name">Dataset:</label>
+                        <select id="data_name" name="data_name" required>
+                            <option value="pizza_steak_sushi_10_percent">10% Pizza, Steak, Sushi</option>
+                            <option value="pizza_steak_sushi_20_percent">20% Pizza, Steak, Sushi</option>
+                        </select>
+                        <label for="epochs">Number of Epochs:</label>
+                        <input type="number" id="epochs" name="epochs" value="5" min="1" max="100" required>
+                        <label for="learning_rate">Learning Rate:</label>
+                        <input type="number" id="learning_rate" name="learning_rate" value="0.001" step="0.0001" required>
+                        <label for="batch_size">Batch Size:</label>
+                        <input type="number" id="batch_size" name="batch_size" value="32" min="1" required>
+                        <button type="submit">Start Training</button>
+                    </fieldset>
+                </form>
+            </div>
+
+            <!-- Prediction Section -->
+            <div class="form-section">
+                <h2>Make a Prediction</h2>
+                <form action="/predict" method="post" enctype="multipart/form-data">
+                    <label for="model_path">Select a Trained Model:</label>
+                    <select id="model_path" name="model_path" required>
+                        {% if models %}
+                            {% for model_file in models %}
+                                <option value="{{ model_file }}">
+                                    {{ model_file }}
+                                </option>
+                            {% endfor %}
+                        {% else %}
+                            <option value="" disabled>
+                                No trained models found.
+                            </option>
+                        {% endif %}
+                    </select>
+                    <label for="image_file">Upload an Image:</label>
+                    <input type="file" id="image_file" name="image_file" accept="image/*" required>
+                    <button type="submit">Predict</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT FOR LIVE UPDATES -->
+    <script>
+        let wasRunning = false;
+
+        async function fetchStatus() {
+            try {
+                const response = await fetch('/status');
+                const data = await response.json();
+
+                const statusBox = document.getElementById('status-box');
+                const statusText = document.getElementById('status-text');
+                const statusDetails = document.getElementById('status-details');
+                const trainingFieldset = document.getElementById('training-fieldset');
+                const cancelForm = document.getElementById('cancel-form');
+                const progressContainer = document.getElementById('progress-container');
+
+                statusText.textContent = data.status;
+                statusText.className = `status-${data.status.toLowerCase()}`;
+                statusBox.setAttribute('data-status', data.status);
+                
+                if (data.status === 'Running') {
+                    if (!wasRunning) {
+                        statusDetails.textContent = data.details;
+                    }
+                    trainingFieldset.disabled = true;
+                    cancelForm.style.display = 'block';
+                    progressContainer.style.display = 'block';
+                    wasRunning = true;
+                } else { // Idle
+                    if (wasRunning) {
+                        window.location.reload();
+                    }
+                    statusDetails.textContent = data.details; // Show completion message
+                    trainingFieldset.disabled = false;
+                    cancelForm.style.display = 'none';
+                    progressContainer.style.display = 'none';
+                    wasRunning = false;
+                }
+
+            } catch (error) {
+                console.error('Error fetching status:', error);
+            }
+        }
+
+        setInterval(fetchStatus, 3000);
+        document.addEventListener('DOMContentLoaded', fetchStatus);
+    </script>
+</body>
+</html>
