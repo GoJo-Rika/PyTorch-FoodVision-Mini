@@ -18,6 +18,7 @@ def pred_and_plot_image(
     image_size: tuple[int, int] = (224, 224),
     transform: torchvision.transforms = None,
     device: torch.device = device,
+    return_fig: bool = False,
 ):
     """
     Predicts on a target image with a target model.
@@ -69,9 +70,14 @@ def pred_and_plot_image(
     # Convert prediction probabilities -> prediction labels
     target_image_pred_label = torch.argmax(target_image_pred_probs, dim=1)
 
+    pred_title = f"Pred: {class_names[target_image_pred_label]} | Prob: {target_image_pred_probs.max():.3f}"
+
+    if return_fig:
+        return img, pred_title
+
     # Plot image with predicted label and probability
     plt.figure()
     plt.imshow(img)
-    plt.title(f"Pred: {class_names[target_image_pred_label]} | Prob: {target_image_pred_probs.max():.3f}")
+    plt.title(pred_title)
     plt.axis(False)
     plt.show()
