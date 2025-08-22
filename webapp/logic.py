@@ -2,6 +2,7 @@ import base64
 import io
 import re
 import subprocess
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import torch
@@ -13,6 +14,16 @@ from food_vision import predict as predictor
 
 # Import from our new shared modules (webapp)
 from webapp import config, state
+
+
+# --- File Validation Function ---
+def is_allowed_file(filename: str) -> bool:
+    """Checks if a filename has an allowed image extension."""
+    if not filename or "." not in filename:
+        return False
+    # Using pathlib to robustly get the extension and convert to lowercase
+    ext = Path(filename).suffix.lower()
+    return ext in config.ALLOWED_EXTENSIONS
 
 
 def get_pytorch_device():

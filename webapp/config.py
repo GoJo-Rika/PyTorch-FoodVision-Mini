@@ -11,3 +11,6 @@ DATASET_URLS = {
 }
 CLASS_NAMES = ["pizza", "steak", "sushi"]
 DEFAULT_MODEL = "effnetb0"
+
+# --- File Upload Validation ---
+ALLOWED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif"}

@@ -76,6 +76,13 @@ async def predict(
     if not image_file.filename:
         return templates.TemplateResponse("result.html", {"request": request, "error": "Please upload an image file."})
 
+    filename = image_file.filename
+
+    # --- Image Format Validation ---
+    if not logic.is_allowed_file(filename):
+        error_msg = "Invalid file type. Please upload a PNG, JPG, JPEG, or GIF image."
+        return templates.TemplateResponse("result.html", {"request": request, "error": error_msg})
+
     image_path = config.UPLOAD_FOLDER / image_file.filename
     with open(image_path, "wb") as buffer:
         shutil.copyfileobj(image_file.file, buffer)

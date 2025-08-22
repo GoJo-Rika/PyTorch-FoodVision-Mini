@@ -3,7 +3,8 @@ import re
 from pathlib import Path
 
 import matplotlib
-matplotlib.use('Agg')
+
+matplotlib.use("Agg")
 
 from dotenv import load_dotenv
 from flask import Flask, flash, jsonify, redirect, render_template, request, url_for
@@ -66,12 +67,16 @@ def predict():
 
     image_file = request.files["image_file"]
     filename = secure_filename(image_file.filename)
+
+    # --- Image Format Validation ---
+    if not logic.is_allowed_file(filename):
+        error_msg = "Invalid file type. Please upload a PNG, JPG, JPEG, or GIF image."
+        return render_template("result.html", error=error_msg)
+
     image_path = config.UPLOAD_FOLDER / filename
     image_file.save(image_path)
 
-    image_base64, error = logic.perform_prediction(
-        model_path_str=request.form.get("model_path"), image_path=image_path
-    )
+    image_base64, error = logic.perform_prediction(model_path_str=request.form.get("model_path"), image_path=image_path)
 
     return render_template("result.html", result_image=image_base64, error=error)
 
