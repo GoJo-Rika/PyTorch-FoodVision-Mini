@@ -1,4 +1,5 @@
 import shutil
+from pathlib import Path
 from typing import Annotated
 from urllib.parse import quote
 
@@ -11,7 +12,9 @@ from fastapi.templating import Jinja2Templates
 matplotlib.use("Agg")
 
 # Import from the new shared webapp package
-from webapp import config, logic, state
+from webapp import config, logic, state, utils
+
+utils.download_sample_images()
 
 # --- FastAPI App Initialization ---
 app = FastAPI()
@@ -23,6 +26,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request, message: str = None, category: str = "success"):
     logic.check_training_status()
+    sample_images = [f.name for f in config.SAMPLES_FOLDER.glob("*.jpg")]
     return templates.TemplateResponse(
         "index.html",
         {
@@ -32,6 +36,7 @@ async def home(request: Request, message: str = None, category: str = "success")
             "device_info": logic.get_device_info(),
             "message": message,
             "category": category,
+            "sample_images": sample_images,
         },
     )
 
@@ -67,6 +72,15 @@ async def cancel_training():
     return RedirectResponse(url=f"/?message={quote(message)}&category={category}", status_code=303)
 
 
+@app.get("/predict_sample", response_class=HTMLResponse)
+async def predict_sample(request: Request, model_path: str, image_name: str):
+    image_path = config.SAMPLES_FOLDER / image_name
+
+    image_base64, error = logic.perform_prediction(model_path_str=model_path, image_path=image_path)
+
+    return templates.TemplateResponse("result.html", {"request": request, "result_image": image_base64, "error": error})
+
+
 @app.post("/predict", response_class=HTMLResponse)
 async def predict(
     request: Request,
@@ -84,7 +98,7 @@ async def predict(
         return templates.TemplateResponse("result.html", {"request": request, "error": error_msg})
 
     image_path = config.UPLOAD_FOLDER / image_file.filename
-    with open(image_path, "wb") as buffer:
+    with Path.open(image_path, "wb") as buffer:
         shutil.copyfileobj(image_file.file, buffer)
 
     image_base64, error = logic.perform_prediction(model_path_str=model_path, image_path=image_path)
