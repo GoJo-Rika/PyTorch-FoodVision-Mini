@@ -194,3 +194,29 @@ fieldset:disabled {
     from { background-position: 20px 0; }
     to { background-position: 0 0; }
 }
+
+.sample-images-container {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.2rem;
+}
+
+.sample-image {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 3px solid transparent;
+    cursor: pointer;
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+.sample-image:hover {
+    transform: scale(1.05);
+    border-color: #007bff;
+}
+
+.sample-image.selected {
+    border-color: #007bff;
+    box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+}
