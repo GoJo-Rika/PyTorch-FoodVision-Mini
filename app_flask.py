@@ -11,7 +11,9 @@ from flask import Flask, flash, jsonify, redirect, render_template, request, url
 from werkzeug.utils import secure_filename
 
 # Import from the new shared webapp package
-from webapp import config, logic, state
+from webapp import config, logic, state, utils
+
+utils.download_sample_images()
 
 # Loading secret key from environment variables
 load_dotenv()
@@ -26,17 +28,28 @@ app.secret_key = os.getenv("SECRET_KEY")
 @app.route("/", methods=["GET"])
 def home():
     logic.check_training_status()
+    message = request.args.get("message")
+    category = request.args.get("category", "success")
+    sample_images = [f.name for f in config.SAMPLES_FOLDER.glob("*.jpg")]
+
     return render_template(
         "index.html",
         models=logic.get_available_models(),
         training_status=state.training_log,
         device_info=logic.get_device_info(),
+        sample_images=sample_images,
+        message=message,
+        category=category,
     )
 
 
 @app.route("/status")
 def status():
-    logic.check_training_status()
+    just_finished, message = logic.check_training_status()
+    if just_finished:
+        state.training_log["message"] = message
+    else:
+        state.training_log.pop("message", None)  # Clean up old messages
     return jsonify(state.training_log)
 
 
@@ -58,6 +71,20 @@ def cancel_training():
     success, message = logic.cancel_current_training()
     flash(message, "success" if success else "error")
     return redirect(url_for("home"))
+
+@app.route("/predict_sample", methods=["GET"])
+def predict_sample():
+    model_path_str = request.args.get("model_path")
+    image_name = request.args.get("image_name")
+
+    if not model_path_str or not image_name:
+        return render_template("result.html", error="Model and sample image must be selected.")
+
+    image_path = config.SAMPLES_FOLDER / image_name
+
+    image_base64, error = logic.perform_prediction(model_path_str=model_path_str, image_path=image_path)
+
+    return render_template("result.html", result_image=image_base64, error=error)
 
 
 @app.route("/predict", methods=["POST"])
