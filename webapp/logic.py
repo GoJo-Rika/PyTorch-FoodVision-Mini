@@ -64,7 +64,7 @@ def check_training_status():
                 model_filename = state.training_log.get("model_filename", "The last model")
                 if return_code == 0:
                     message = f"Training for '{model_filename}' completed successfully!"
-                    state.training_log["details"] = (f"Last run for '{model_filename}' completed.")
+                    state.training_log["details"] = (f"Last run for '{model_filename}' completed successfully.")
                 else:
                     message = f"Training for '{model_filename}' failed. Check terminal."
                     state.training_log["details"] = (f"Last run for '{model_filename}' failed.")
